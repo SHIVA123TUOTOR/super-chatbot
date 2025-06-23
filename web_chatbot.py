@@ -1,7 +1,5 @@
 import streamlit as st
 import requests
-import pyttsx3
-import speech_recognition as sr
 import time
 
 # Initialize text-to-speech engine
