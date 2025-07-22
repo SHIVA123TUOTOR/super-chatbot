@@ -8,7 +8,7 @@ st.title("🤖 Super Chatbot - Groq Powered")
 def chat_with_groq(prompt, history):
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",
+        "Authorization": "Bearer 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",
         "Content-Type": "application/json"
     }
     payload = {
