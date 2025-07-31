@@ -1,86 +1,92 @@
+import streamlit as st
 import requests
-import os
+import base64
 
-# API Keys
-GROQ_API = "groq-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"
-WOLFRAM_API = "GGV577-9U5LR6JR35"
-PEXELS_API = "0x4Fqd2tOFWhdEDn9hC96Y7iXPYTQ6KUV0qX3p9lLu7eR4kAfz3IElB4"
-REMOVEBG_API = "FRZPYZmMn895ZCh5GoctrSqK"
-TRIVIA_URL = "https://opentdb.com/api.php?amount=1"
+# API KEYS
+GROQ_API_KEY = "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"
+ASSEMBLYAI_API_KEY = "assemblyai-e238350da8ad4b7f8c077731ff80c8f8"
+PEXELS_API_KEY = "0x4Fqd2tOFWhdEDn9hC96Y7iXPYTQ6KUV0qX3p9lLu7eR4kAfz3IElB4"
+REMOVEBG_API_KEY = "FRZPYZmMn895ZCh5GoctrSqK"
+WOLFRAMALPHA_APPID = "GGV577-9U5LR6JR35"
+OPENTDB_API_URL = "https://opentdb.com/api.php?amount=50&difficulty=easy"
 
-def chat_with_groq(prompt):
+# Set Streamlit page
+st.set_page_config(page_title="Jarvis AI", layout="wide")
+st.title("🧠 Jarvis AI - All-in-One Web Assistant")
+
+# User input
+user_input = st.text_input("Ask Jarvis anything...", "")
+
+# Function: Groq Chat API
+def chat_groq(prompt):
     url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {GROQ_API}",
-        "Content-Type": "application/json"
+    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+    payload = {
+        "model": "llama3-8b-8192",
+        "messages": [{"role": "user", "content": prompt}]
     }
-    body = {
-        "model": "mixtral-8x7b-32768",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.8
-    }
-    res = requests.post(url, headers=headers, json=body)
-    return res.json()['choices'][0]['message']['content']
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()["choices"][0]["message"]["content"]
 
-def solve_math(query):
-    url = f"http://api.wolframalpha.com/v1/result?appid={WOLFRAM_API}&i={query}"
-    res = requests.get(url)
-    return res.text
+# Function: WolframAlpha Query
+def query_wolfram(query):
+    url = f"https://api.wolframalpha.com/v1/result?i={query}&appid={WOLFRAMALPHA_APPID}"
+    response = requests.get(url)
+    return response.text
 
-def get_trivia():
-    res = requests.get(TRIVIA_URL).json()
+# Function: Random Quiz
+def get_quiz():
+    res = requests.get(OPENTDB_API_URL).json()
     q = res['results'][0]
-    return f"🧠 Trivia:\nQ: {q['question']}\nA: {q['correct_answer']}"
+    return f"Q: {q['question']} (Category: {q['category']})\nOptions: {q['incorrect_answers'] + [q['correct_answer']]}"
 
-def get_pexels_image(query):
-    headers = {"Authorization": PEXELS_API}
-    res = requests.get(f"https://api.pexels.com/v1/search?query={query}&per_page=1", headers=headers)
-    try:
-        photo_url = res.json()['photos'][0]['src']['original']
-        img = requests.get(photo_url)
-        with open("pexels_image.jpg", "wb") as f:
-            f.write(img.content)
-        return "Image downloaded as 'pexels_image.jpg'"
-    except:
-        return "No image found."
+# Function: Get Pexels Image
+def get_image(query):
+    headers = {"Authorization": PEXELS_API_KEY}
+    res = requests.get(f"https://api.pexels.com/v1/search?query={query}&per_page=1", headers=headers).json()
+    if res["photos"]:
+        return res["photos"][0]["src"]["original"]
+    return "No image found."
 
-def remove_bg(image_path):
-    with open(image_path, 'rb') as f:
-        files = {'image_file': f}
-        headers = {'X-Api-Key': REMOVEBG_API}
-        response = requests.post('https://api.remove.bg/v1.0/removebg', files=files, headers=headers)
-        if response.status_code == 200:
-            with open("no_bg.png", "wb") as out:
-                out.write(response.content)
-            return "Background removed and saved as 'no_bg.png'"
-        else:
-            return "Background removal failed."
+# Function: Remove Background
+def remove_bg(image_url):
+    headers = {
+        "X-Api-Key": REMOVEBG_API_KEY
+    }
+    data = {
+        "image_url": image_url,
+        "size": "auto"
+    }
+    res = requests.post("https://api.remove.bg/v1.0/removebg", headers=headers, data=data)
+    if res.status_code == 200:
+        return res.content
+    return None
 
-def main():
-    print("🤖 Welcome to Jarvis AI (Text Mode)")
-    while True:
-        cmd = input("🗨  You: ").strip()
-        
-        if cmd.lower() in ["exit", "quit"]:
-            print("👋 Goodbye!")
-            break
+# Process user input
+if user_input:
+    with st.spinner("Jarvis is thinking..."):
+        try:
+            # Check for Wolfram keywords
+            if any(x in user_input.lower() for x in ["calculate", "define", "who is", "what is"]):
+                answer = query_wolfram(user_input)
+            elif "quiz" in user_input.lower():
+                answer = get_quiz()
+            elif "image" in user_input.lower():
+                topic = user_input.split("image of")[-1].strip()
+                answer = get_image(topic)
+                st.image(answer)
+            elif "remove background" in user_input.lower():
+                image_url = user_input.split("remove background of")[-1].strip()
+                result = remove_bg(image_url)
+                if result:
+                    st.image(result)
+                    st.success("Background removed!")
+                else:
+                    st.error("Failed to remove background.")
+                answer = "Here is your edited image."
+            else:
+                answer = chat_groq(user_input)
 
-        elif cmd.startswith("math "):
-            print("🧮", solve_math(cmd[5:]))
-
-        elif cmd.lower() == "trivia":
-            print(get_trivia())
-
-        elif cmd.startswith("image "):
-            topic = cmd[6:]
-            print(get_pexels_image(topic))
-
-        elif cmd.startswith("removebg "):
-            path = cmd[9:]
-            print(remove_bg(path))
-
-        else:
-            print("💬", chat_with_groq(cmd))
-
-if _name_ == "_main_":
-    main()
+            st.markdown(f"🧠 **Jarvis:** {answer}")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
