@@ -3,7 +3,7 @@ import requests
 import base64
 
 # API KEYS
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 ASSEMBLYAI_API_KEY = "assemblyai-e238350da8ad4b7f8c077731ff80c8f8"
 PEXELS_API_KEY = "0x4Fqd2tOFWhdEDn9hC96Y7iXPYTQ6KUV0qX3p9lLu7eR4kAfz3IElB4"
 REMOVEBG_API_KEY = "FRZPYZmMn895ZCh5GoctrSqK"
@@ -90,3 +90,4 @@ if user_input:
             st.markdown(f"🧠 **Jarvis:** {answer}")
         except Exception as e:
             st.error(f"Error: {str(e)}")
+
